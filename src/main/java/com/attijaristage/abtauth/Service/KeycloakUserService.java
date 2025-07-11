@@ -11,6 +11,7 @@ import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,15 +20,15 @@ import java.util.List;
 public class KeycloakUserService {
     private final Keycloak keycloak;
     private final String realm = "carthago-realm";
-
-    public KeycloakUserService() {
+    public KeycloakUserService(@Value("${keycloak.client-secret}") String clientSecret, @Value("${keycloak.admin-username}") String adminUsername,
+                               @Value("${keycloak.admin-password}") String adminPassword ) {
         this.keycloak = KeycloakBuilder.builder()
                 .serverUrl("http://localhost:8080")  //URL of your Keycloak server
                 .realm("carthago-realm")                    // Realm used to authenticate (usually "master" for admin users)
                 .clientId("carthago-client")
-                .clientSecret("J9xqeA9CDZECxSOaKUZuS5VuFTYK8eIu")// Client ID with admin rights in that realm (usually "admin-cli")
-                .username("yessmine_test")                  // Admin username
-                .password("admin")                  // Admin password
+                .clientSecret(clientSecret)// Client ID with admin rights in that realm (usually "admin-cli")
+                .username(adminUsername)                  // Admin username
+                .password(adminPassword)                  // Admin password
                 .grantType(OAuth2Constants.PASSWORD) // We're using password-based authentication
                 .build();
     }

@@ -43,8 +43,11 @@ public class UserProfileService {
                 .collect(Collectors.toList());
     }
 
-    public Optional<UserProfile> getById(Long id) {
-        return repo.findById(id);
+    public Optional<UserProfileDTO> getById(Long id) {
+        return repo.findById(id).map(user -> {
+            Keycloak keycloak = keycloakUserService.getKeycloak();
+            return UserProfileMapper.toDTO(user, keycloak, realm);
+        });
     }
     public void delete(Long id){
         if (repo.existsById(id)){

@@ -32,12 +32,14 @@ public class UserProfileController {
     public List<UserProfileDTO> getAll() {
         return service.getAll();
     }
+
     @GetMapping("/{id}")
-    public ResponseEntity<UserProfile> getById(@PathVariable Long id) {
+    public ResponseEntity<UserProfileDTO> getById(@PathVariable Long id) {
         return service.getById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
     @PutMapping("/{id}")
     public ResponseEntity<UserProfile> update(@PathVariable Long id, @RequestBody UserProfileDTO dto) {
         return service.update(id, dto)
