@@ -23,12 +23,17 @@ public class KeycloakUserService {
     public KeycloakUserService() {
         this.keycloak = KeycloakBuilder.builder()
                 .serverUrl("http://localhost:8080")  //URL of your Keycloak server
-                .realm("master")                    // Realm used to authenticate (usually "master" for admin users)
-                .clientId("admin-cli")              // Client ID with admin rights in that realm (usually "admin-cli")
-                .username("yessminehassad")                  // Admin username
+                .realm("carthago-realm")                    // Realm used to authenticate (usually "master" for admin users)
+                .clientId("carthago-client")
+                .clientSecret("J9xqeA9CDZECxSOaKUZuS5VuFTYK8eIu")// Client ID with admin rights in that realm (usually "admin-cli")
+                .username("yessmine_test")                  // Admin username
                 .password("admin")                  // Admin password
                 .grantType(OAuth2Constants.PASSWORD) // We're using password-based authentication
                 .build();
+    }
+
+    public Keycloak getKeycloak() {
+        return keycloak;
     }
 
     public void deleteUserInKeycloak(String keycloakId) {
@@ -38,27 +43,20 @@ public class KeycloakUserService {
             throw new IllegalArgumentException("L'identifiant Keycloak est null ou vide.");
         }
     }
-    public void validateUniqueUsernameAndEmail(String username, String email, String currentUserId) {
-        List<UserRepresentation> usersWithSameUsername = keycloak.realm(realm)
-                .users()
-                .search(username, 0, 10);
 
-        for (UserRepresentation user : usersWithSameUsername) {
-            if (!user.getId().equals(currentUserId) && username.equalsIgnoreCase(user.getUsername())) {
-                throw new RuntimeException("Le nom d'utilisateur '" + username + "' est déjà utilisé.");
-            }
-        }
-
+    public void validateUniqueEmail(String email, String currentUserId) {
         List<UserRepresentation> usersWithSameEmail = keycloak.realm(realm)
                 .users()
                 .searchByEmail(email, true);
 
         for (UserRepresentation user : usersWithSameEmail) {
+            // Vérifie que l'utilisateur trouvé n'est pas celui actuellement modifié (si update)
             if (!user.getId().equals(currentUserId) && email.equalsIgnoreCase(user.getEmail())) {
                 throw new RuntimeException("L'email '" + email + "' est déjà utilisé.");
             }
         }
     }
+
 
 
     public void updateUserInKeycloak(UserProfileDTO dto, String keycloakId) {
@@ -73,8 +71,10 @@ public class KeycloakUserService {
         String newUsername = (dto.getUsername() != null && !dto.getUsername().isBlank()) ? dto.getUsername().trim() : user.getUsername();
         String newEmail = (dto.getEmail() != null && !dto.getEmail().isBlank()) ? dto.getEmail().trim() : user.getEmail();
 
-        // Valide l'unicité avant mise à jour
-        validateUniqueUsernameAndEmail(newUsername, newEmail, keycloakId);
+        // Valide l'unicité mail avant mise à jour
+        if (!newEmail.equalsIgnoreCase(user.getEmail())) {
+            validateUniqueEmail(newEmail, keycloakId);
+        }
 
         // Mise à jour des champs uniquement s’ils sont fournis dans dto
         if (dto.getUsername() != null && !dto.getUsername().isBlank()) {
@@ -115,13 +115,17 @@ public class KeycloakUserService {
         }
     }
 
-
     public String createUserInKeycloak(UserProfileDTO userDto) {
+        // Validation de l’unicité de l’email
+        validateUniqueEmail(userDto.getEmail(), null); // Lors de la création, pas encore d'ID
+
+        // Préparer les informations d'identifiants (mot de passe)
         CredentialRepresentation credential = new CredentialRepresentation();
         credential.setTemporary(false);
         credential.setType(CredentialRepresentation.PASSWORD);
         credential.setValue(userDto.getPassword());
 
+        // Construire l'utilisateur Keycloak
         UserRepresentation user = new UserRepresentation();
         user.setUsername(userDto.getUsername());
         user.setFirstName(userDto.getFirstName());
@@ -129,32 +133,26 @@ public class KeycloakUserService {
         user.setEmail(userDto.getEmail());
         user.setEnabled(true);
 
+        // Appel API Keycloak pour créer l'utilisateur
         Response response = keycloak.realm(realm).users().create(user);
 
         if (response.getStatus() != 201) {
             throw new RuntimeException("Erreur lors de la création de l'utilisateur : Status = " + response.getStatus());
         }
 
+        // Récupérer l'ID de l'utilisateur nouvellement créé
         String userId = CreatedResponseUtil.getCreatedId(response);
+
+        // Vérifier la présence du mot de passe
         if (userDto.getPassword() == null || userDto.getPassword().isBlank()) {
             throw new RuntimeException("Le mot de passe est requis pour créer l'utilisateur dans Keycloak.");
         }
 
-        // Très important : ne fais resetPassword que si userId est valide
+        // Définir le mot de passe pour le nouvel utilisateur
         keycloak.realm(realm).users().get(userId).resetPassword(credential);
 
         return userId;
     }
-    public boolean isUsernameTaken(String username, String excludeUserId) {
-        List<UserRepresentation> users = keycloak.realm(realm)
-                .users()
-                .search(username, 0, 10);
 
-        for (UserRepresentation u : users) {
-            if (!u.getId().equals(excludeUserId) && username.equalsIgnoreCase(u.getUsername())) {
-                return true;
-            }
-        }
-        return false;
-    }
+
 }

@@ -19,6 +19,7 @@ public class UserProfileController {
     private  UserProfileService service;
     @Autowired
     private KeycloakUserService keycloakUserService;
+    private UserProfileDTO dto;
 
 
     @PostMapping
@@ -28,7 +29,7 @@ public class UserProfileController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
     @GetMapping
-    public List<UserProfile> getAll() {
+    public List<UserProfileDTO> getAll() {
         return service.getAll();
     }
     @GetMapping("/{id}")
@@ -46,7 +47,7 @@ public class UserProfileController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> delete(@PathVariable Long id) {
         return service.getById(id).map(existing -> {
-            keycloakUserService.deleteUserInKeycloak(existing.getIdKeycloak());
+            keycloakUserService.deleteUserInKeycloak(existing.getKeycloakId());
             service.delete(id);
             return ResponseEntity.noContent().build();
         }).orElse(ResponseEntity.notFound().build());

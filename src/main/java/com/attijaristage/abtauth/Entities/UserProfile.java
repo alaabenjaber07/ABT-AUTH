@@ -8,34 +8,56 @@ import java.util.Date;
 public class UserProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private String idKeycloak;
+    private Long idUserprofile;
+    private String keycloakId;
     private Date dateOfBirth;
+    private String matricule;
+    private String address;
     private String phoneNumber;
     public UserProfile() {
     }
 
-    public UserProfile(Long id, String idKeycloak, Date dateOfBirth, String phoneNumber) {
-        this.id = id;
-        this.idKeycloak = idKeycloak;
+    public String getMatricule() {
+        return matricule;
+    }
+
+    public void setMatricule(String matricule) {
+        this.matricule = matricule;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public UserProfile(Long id, String idKeycloak, Date dateOfBirth, String matricule, String address, String phoneNumber) {
+        this.idUserprofile = id;
+        this.keycloakId = idKeycloak;
         this.dateOfBirth = dateOfBirth;
+        this.matricule = matricule;
+        this.address = address;
         this.phoneNumber = phoneNumber;
     }
 
-    public Long getId() {
-        return id;
+
+
+    public Long getIdUserProfile() {
+        return idUserprofile;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setIdUserProfile(Long id) {
+        this.idUserprofile = id;
     }
 
-    public String getIdKeycloak() {
-        return idKeycloak;
+    public String getKeycloakId() {
+        return keycloakId;
     }
 
-    public void setIdKeycloak(String idKeycloak) {
-        this.idKeycloak = idKeycloak;
+    public void setKeycloakId(String idKeycloak) {
+        this.keycloakId= idKeycloak;
     }
 
     public Date getDateOfBirth() {

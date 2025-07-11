@@ -1,17 +1,38 @@
 package com.attijaristage.abtauth.DTO;
 
 import com.attijaristage.abtauth.Entities.UserProfile;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.UserRepresentation;
 
 public class UserProfileMapper {
-    public static UserProfileDTO toDTO(UserProfile entity) {
+    public static UserProfileDTO toDTO(UserProfile entity, Keycloak keycloak, String realm) {
         if (entity == null) return null;
-        return new UserProfileDTO(
-                entity.getKeycloakId(),
-                entity.getMatricule(),
-                entity.getAddress(),
-                entity.getPhoneNumber()
-        );
+
+        UserProfileDTO dto = new UserProfileDTO();
+
+        // Données stockées en base
+        dto.setKeycloakId(entity.getKeycloakId());
+        dto.setMatricule(entity.getMatricule());
+        dto.setAddress(entity.getAddress());
+        dto.setPhoneNumber(entity.getPhoneNumber());
+        dto.setDateOfBirth(entity.getDateOfBirth());
+
+        // Données venant de Keycloak
+        try {
+            UserRepresentation keycloakUser = keycloak.realm(realm).users().get(entity.getKeycloakId()).toRepresentation();
+            dto.setUsername(keycloakUser.getUsername());
+            dto.setEmail(keycloakUser.getEmail());
+            dto.setFirstName(keycloakUser.getFirstName());
+            dto.setLastName(keycloakUser.getLastName());
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la récupération des infos Keycloak pour l'utilisateur avec ID: " + entity.getKeycloakId());
+            e.printStackTrace();
+        }
+
+        return dto;
     }
+
+
 
     public static UserProfile toEntity(UserProfileDTO dto) {
         if (dto == null) return null;

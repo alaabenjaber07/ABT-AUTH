@@ -1,14 +1,20 @@
 package com.attijaristage.abtauth.Service;
 
 import com.attijaristage.abtauth.DTO.UserProfileDTO;
+import com.attijaristage.abtauth.DTO.UserProfileMapper;
 import com.attijaristage.abtauth.Entities.UserProfile;
 import com.attijaristage.abtauth.Repository.UserProfileRepo;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Value;
+
+import org.keycloak.admin.client.Keycloak;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -17,17 +23,26 @@ public class UserProfileService {
     private  UserProfileRepo repo ;
     @Autowired
     private KeycloakUserService keycloakUserService;
+    private String realm="carthago-realm";
+
 
     public UserProfile create(UserProfileDTO dto,String keycloakId){
         UserProfile user = new UserProfile();
-        user.setIdKeycloak(keycloakId);
+        user.setKeycloakId(keycloakId);
         user.setDateOfBirth(dto.getDateOfBirth());
         user.setPhoneNumber(dto.getPhoneNumber());
+        user.setAddress(dto.getAddress());
+        user.setMatricule(dto.getMatricule());
         return repo.save(user);
     }
-    public List<UserProfile> getAll(){
-        return repo.findAll();
+    public List<UserProfileDTO> getAll() {
+        Keycloak keycloak = keycloakUserService.getKeycloak();
+        return repo.findAll()
+                .stream()
+                .map(user -> UserProfileMapper.toDTO(user, keycloak, realm))
+                .collect(Collectors.toList());
     }
+
     public Optional<UserProfile> getById(Long id) {
         return repo.findById(id);
     }
@@ -39,8 +54,8 @@ public class UserProfileService {
     /*UPDATE*/
     public Optional<UserProfile> update(Long id, UserProfileDTO dto) {
         return repo.findById(id).map(existingUser -> {
-            if (existingUser.getIdKeycloak() != null) {
-                keycloakUserService.updateUserInKeycloak(dto, existingUser.getIdKeycloak());
+            if (existingUser.getKeycloakId() != null) {
+                keycloakUserService.updateUserInKeycloak(dto, existingUser.getKeycloakId());
             }
             if (dto.getDateOfBirth() != null) {
                 existingUser.setDateOfBirth(dto.getDateOfBirth());
@@ -48,8 +63,16 @@ public class UserProfileService {
             if (dto.getPhoneNumber() != null) {
                 existingUser.setPhoneNumber(dto.getPhoneNumber());
             }
-            if (dto.getIdKeycloak() != null) {
-                existingUser.setIdKeycloak(dto.getIdKeycloak());
+            if (dto.getKeycloakId() != null) {
+                existingUser.setKeycloakId(dto.getKeycloakId());
+
+            }
+            if (dto.getAddress() != null) {
+                existingUser.setAddress(dto.getAddress());
+
+            }
+            if (dto.getMatricule() != null) {
+                existingUser.setMatricule(dto.getMatricule());
 
             }
 
