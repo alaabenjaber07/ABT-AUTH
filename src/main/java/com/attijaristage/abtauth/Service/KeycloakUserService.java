@@ -13,8 +13,12 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.keycloak.representations.idm.RoleRepresentation;
 
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class KeycloakUserService {
@@ -143,6 +147,13 @@ public class KeycloakUserService {
 
         // Récupérer l'ID de l'utilisateur nouvellement créé
         String userId = CreatedResponseUtil.getCreatedId(response);
+        RoleRepresentation role= keycloak.realm(realm).roles().get(userDto.getRole()).toRepresentation();
+        keycloak.realm(realm)
+                .users()
+                .get(userId)
+                .roles()
+                .realmLevel()
+                .add(List.of(role));
 
         // Vérifier la présence du mot de passe
         if (userDto.getPassword() == null || userDto.getPassword().isBlank()) {
@@ -152,8 +163,57 @@ public class KeycloakUserService {
         // Définir le mot de passe pour le nouvel utilisateur
         keycloak.realm(realm).users().get(userId).resetPassword(credential);
 
+
         return userId;
     }
+
+    public String getUserRoleByKeycloakId(String keycloakId) {
+        try {
+            List<String> roles = keycloak.realm(realm)
+                    .users()
+                    .get(keycloakId)
+                    .roles()
+                    .realmLevel()
+                    .listEffective()
+                    .stream()
+                    .map(role -> role.getName())
+                    .collect(Collectors.toList());
+
+            if (roles.contains("admin")) {
+                return "admin";
+            } else if (roles.contains("bancaire")) {
+                return "bancaire";
+            } else {
+                return "aucun rôle";
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la récupération du rôle de l'utilisateur " + keycloakId, e);
+        }
+    }
+
+    public void setUserRole(String keycloakId, String roleName) {
+        // Vérifie que le rôle est valide
+        if (!List.of("admin", "bancaire").contains(roleName)) {
+            throw new IllegalArgumentException("Rôle invalide : " + roleName);
+        }
+
+        // Récupère le rôle depuis Keycloak
+        RoleRepresentation role = keycloak.realm(realm).roles().get(roleName).toRepresentation();
+        List<RoleRepresentation> currentRoles = keycloak.realm(realm).users().get(keycloakId).roles().realmLevel().listEffective();
+        List<RoleRepresentation> toRemove = currentRoles.stream()
+                .filter(r -> r.getName().equals("admin") || r.getName().equals("bancaire"))
+                .collect(Collectors.toList());
+        keycloak.realm(realm).users().get(keycloakId).roles().realmLevel().remove(toRemove);
+        // Assigne le rôle à l'utilisateur
+        keycloak.realm(realm)
+                .users()
+                .get(keycloakId)
+                .roles()
+                .realmLevel()
+                .add(List.of(role));
+    }
+
+
 
 
 }

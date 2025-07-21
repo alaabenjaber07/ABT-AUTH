@@ -9,9 +9,13 @@ import java.util.Date;
 
 @Data
 public class UserProfileDTO {
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private Long idUserprofile;
     private String username;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String role;
     @Email
     private String email;
     private String firstName;
@@ -20,6 +24,7 @@ public class UserProfileDTO {
     private String matricule;
     private String address;
     private String phoneNumber;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String keycloakId;
     public UserProfileDTO(String keycloakId, String matricule, String address, String phoneNumber, Date dateOfBirth) {
     }
@@ -131,6 +136,21 @@ public class UserProfileDTO {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+    public Long getIdUserprofile() {
+        return idUserprofile;
+    }
+
+    public void setIdUserprofile(Long idUserprofile) {
+        this.idUserprofile = idUserprofile;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     @Override

@@ -3,6 +3,8 @@ package com.attijaristage.abtauth.DTO;
 import com.attijaristage.abtauth.Entities.UserProfile;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 
 public class UserProfileMapper {
     public static UserProfileDTO toDTO(UserProfile entity, Keycloak keycloak, String realm) {

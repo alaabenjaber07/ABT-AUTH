@@ -82,5 +82,10 @@ public class UserProfileService {
             return repo.save(existingUser);
         });
     }
+    public String getKeycloakIdById(Long idUserprofile) {
+        return repo.findById(idUserprofile)
+                .map(userProfile -> userProfile.getKeycloakId())
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable pour id : " + idUserprofile));
+    }
 
 }
