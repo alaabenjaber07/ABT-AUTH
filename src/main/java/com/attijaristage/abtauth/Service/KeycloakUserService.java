@@ -1,12 +1,20 @@
 package com.attijaristage.abtauth.Service;
 
+import com.attijaristage.abtauth.DTO.UserProfileDTO;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.List;
+
+import static org.keycloak.OAuth2Constants.CLIENT_SECRET;
+import static org.keycloak.events.admin.ResourceType.REALM;
 
 @Service
 public class KeycloakUserService {
@@ -60,4 +68,46 @@ public class KeycloakUserService {
         String path = response.getLocation().getPath();
         return path.substring(path.lastIndexOf('/') + 1);
     }
+
+
+
+    public String login(String username, String password) {
+        Keycloak keycloakLogin = KeycloakBuilder.builder()
+                .serverUrl("http://localhost:8180")
+                .realm("carthago-realm")
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .clientId(CLIENT_ID)
+                .clientSecret("KJSiuA8GNaXmZvKyucyCF7ngls0JpaFQ")
+                .username(username)
+                .password(password)
+                .build();
+
+        return keycloakLogin.tokenManager().getAccessTokenString();
+    }
+
+
+    public List<UserRepresentation> getAllUsers() {
+        return keycloak.realm("carthago-realm").users().list();
+    }
+
+    public void deleteUserById(String keycloakId) {
+        try {
+            keycloak.realm(TARGET_REALM).users().get(keycloakId).remove();
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la suppression dans Keycloak : " + e.getMessage());
+        }
+    }
+
+
+    public UserRepresentation getUserById(String keycloakId) {
+        try {
+            return keycloak.realm(TARGET_REALM).users().get(keycloakId).toRepresentation();
+        } catch (Exception e) {
+            System.err.println("Erreur récupération user Keycloak : " + e.getMessage());
+            return null;
+        }
+    }
+
+
+
 }

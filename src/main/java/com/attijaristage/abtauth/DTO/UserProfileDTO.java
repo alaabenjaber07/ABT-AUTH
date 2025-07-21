@@ -4,6 +4,7 @@
 
     public class UserProfileDTO {
         // Infos pour Keycloak
+            private Long idUserprofile;  // Ajouté ici
         private String username;
         private String email;
         private String firstName;
@@ -97,5 +98,14 @@
 
         public void setPassword(String password) {
             this.password = password;
+        }
+
+
+        public Long getIdUserprofile() {
+            return idUserprofile;
+        }
+
+        public void setIdUserprofile(Long idUserprofile) {
+            this.idUserprofile = idUserprofile;
         }
     }

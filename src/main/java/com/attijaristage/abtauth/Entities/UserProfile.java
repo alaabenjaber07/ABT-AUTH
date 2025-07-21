@@ -62,6 +62,14 @@ public class UserProfile {
         this.phoneNumber = phoneNumber;
     }
 
+    public Long getIdUserprofile() {
+        return idUserprofile;
+    }
+
+    public void setIdUserprofile(Long idUserprofile) {
+        this.idUserprofile = idUserprofile;
+    }
+
     @Override
     public String toString() {
         return "UserProfile{" +
