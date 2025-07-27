@@ -139,6 +139,33 @@ public class UserProfileService {
     }
 
 
+    public void updateUserProfile(Long idUserprofile, UserProfileDTO dto) {
+        Optional<UserProfile> optional = userProfileRepository.findById(idUserprofile);
+        if (optional.isEmpty()) {
+            throw new NoSuchElementException("Utilisateur non trouvé avec id : " + idUserprofile);
+        }
+
+        UserProfile existing = optional.get();
+
+        // Update BDD
+        existing.setMatricule(dto.getMatricule());
+        existing.setAddress(dto.getAddress());
+        existing.setPhoneNumber(dto.getPhoneNumber());
+        userProfileRepository.save(existing);
+
+        // Update Keycloak
+        keycloakUserService.updateUser(
+                existing.getKeycloakId(),
+                dto.getFirstName(),
+                dto.getLastName(),
+                dto.getEmail()
+        );
+
+        System.out.println("✅ Keycloak ID utilisé pour update : " + existing.getKeycloakId());
+
+    }
+
+
 
 
 }

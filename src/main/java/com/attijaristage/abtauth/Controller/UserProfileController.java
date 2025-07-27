@@ -22,7 +22,7 @@ public class UserProfileController {
     @Autowired
     private UserProfileService userProfileService;
 
-    // ✅ Enregistrer un utilisateur
+    //  Enregistrer un utilisateur
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserProfileDTO dto) {
         try {
@@ -33,7 +33,7 @@ public class UserProfileController {
         }
     }
 
-    // ✅ Login
+    // Login
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
         try {
@@ -44,14 +44,14 @@ public class UserProfileController {
         }
     }
 
-    // ✅ Récupérer tous les utilisateurs
+    // Récupérer tous les utilisateurs
     @GetMapping
     public ResponseEntity<List<UserProfileDTO>> getAllUsers() {
         List<UserProfileDTO> users = userProfileService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
-    // ✅ Supprimer un utilisateur
+    //  Supprimer un utilisateur
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try {
@@ -63,7 +63,7 @@ public class UserProfileController {
         }
     }
 
-    // ✅ Récupérer un utilisateur par ID
+    //  Récupérer un utilisateur par ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserProfile(@PathVariable Long id) {
         try {
@@ -75,6 +75,20 @@ public class UserProfileController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne : " + e.getMessage());
         }
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUserProfile(@PathVariable Long id, @RequestBody UserProfileDTO dto) {
+        try {
+            userProfileService.updateUserProfile(id, dto);
+            return ResponseEntity.ok("Utilisateur mis à jour avec succès.");
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Utilisateur non trouvé.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors de la mise à jour : " + e.getMessage());
+        }
+    }
+
 
 
 }

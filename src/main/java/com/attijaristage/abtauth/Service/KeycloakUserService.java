@@ -5,6 +5,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -107,6 +108,28 @@ public class KeycloakUserService {
             return null;
         }
     }
+
+    public void updateUser(String id, String firstName, String lastName, String email) {
+        if (id == null || id.isEmpty()) {
+            throw new IllegalArgumentException("❌ keycloakId est null ou vide !");
+        }
+
+        UserRepresentation user = keycloak.realm(TARGET_REALM)
+                .users()
+                .get(id)
+                .toRepresentation();
+
+        // Ne modifie PAS username ici
+        // user.setUsername(username);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+
+        keycloak.realm(TARGET_REALM).users().get(id).update(user);
+    }
+
+
+
 
 
 
