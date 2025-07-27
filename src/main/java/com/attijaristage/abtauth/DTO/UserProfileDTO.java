@@ -1,5 +1,6 @@
-package com.attijaristage.abtauth.DTO;
+    package com.attijaristage.abtauth.DTO;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
@@ -9,23 +10,23 @@ import java.util.Date;
 
 @Data
 public class UserProfileDTO {
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Long idUserprofile;
     private String username;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String role;
     @Email
     private String email;
     private String firstName;
     private String lastName;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date dateOfBirth;
     private String matricule;
     private String address;
     private String phoneNumber;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String keycloakId;
+
     public UserProfileDTO(String keycloakId, String matricule, String address, String phoneNumber, Date dateOfBirth) {
     }
 
@@ -49,13 +50,14 @@ public class UserProfileDTO {
     }
 
     public UserProfileDTO(String keycloakId, String matricule, String address, String phoneNumber) {
-        this.keycloakId=keycloakId;
-        this.matricule=matricule;
-        this.address=address;
-        this.phoneNumber=phoneNumber;
+        this.keycloakId = keycloakId;
+        this.matricule = matricule;
+        this.address = address;
+        this.phoneNumber = phoneNumber;
     }
 
-    public UserProfileDTO() {}
+    public UserProfileDTO() {
+    }
 
 
     public Date getDateOfBirth() {
@@ -79,7 +81,7 @@ public class UserProfileDTO {
     }
 
     public void setKeycloakId(String idKeycloak) {
-        this.keycloakId= idKeycloak;
+        this.keycloakId = idKeycloak;
     }
 
     public String getUsername() {
@@ -90,13 +92,6 @@ public class UserProfileDTO {
         this.username = username;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
 
     public String getEmail() {
         return email;
@@ -137,16 +132,26 @@ public class UserProfileDTO {
     public void setAddress(String address) {
         this.address = address;
     }
+
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
     public Long getIdUserprofile() {
         return idUserprofile;
     }
 
     public void setIdUserprofile(Long idUserprofile) {
         this.idUserprofile = idUserprofile;
-    }
-
-    public String getRole() {
-        return role;
     }
 
     public void setRole(String role) {
@@ -168,5 +173,4 @@ public class UserProfileDTO {
                 ", keycloakId='" + keycloakId + '\'' +
                 '}';
     }
-
 }

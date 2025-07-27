@@ -34,15 +34,15 @@ public class UserProfileMapper {
         return dto;
     }
 
-
-
     public static UserProfile toEntity(UserProfileDTO dto) {
         if (dto == null) return null;
         UserProfile entity = new UserProfile();
+        entity.setIdUserProfile(dto.getIdUserprofile());  // set ID (utile pour update)
         entity.setKeycloakId(dto.getKeycloakId());
         entity.setMatricule(dto.getMatricule());
         entity.setAddress(dto.getAddress());
         entity.setPhoneNumber(dto.getPhoneNumber());
+        entity.setDateOfBirth(dto.getDateOfBirth());
         return entity;
     }
 }
