@@ -4,7 +4,6 @@ import com.attijaristage.abtauth.DTO.UserProfileDTO;
 import com.attijaristage.abtauth.DTO.UserProfileMapper;
 import com.attijaristage.abtauth.Entities.UserProfile;
 import com.attijaristage.abtauth.Repository.UserProfileRepo;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,7 @@ public class UserProfileService {
 
     @Autowired
     private UserProfileRepo userProfileRepository;
-    private String realm="carthago-realm";
+
     public void registerUser(UserProfileDTO dto) {
         // 1. Créer dans Keycloak
         String keycloakId = keycloakUserService.createUser(
@@ -31,26 +30,19 @@ public class UserProfileService {
                 dto.getLastName(),
                 dto.getPassword()
         );
-        keycloakUserService.setUserRole(keycloakId, dto.getRole());
+
+        // 2. Sauvegarder dans la base
         UserProfile profile = new UserProfile();
         profile.setKeycloakId(keycloakId);
         profile.setMatricule(dto.getMatricule());
         profile.setAddress(dto.getAddress());
         profile.setPhoneNumber(dto.getPhoneNumber());
-        profile.setDateOfBirth(dto.getDateOfBirth());
 
         userProfileRepository.save(profile);
     }
 
-
     public String loginUser(String username, String password) {
         return keycloakUserService.login(username, password);
-    }
-    public Optional<UserProfileDTO> getById(Long id) {
-        return userProfileRepository.findById(id).map(user -> {
-            Keycloak keycloak = keycloakUserService.getKeycloak();
-            return UserProfileMapper.toDTO(user, keycloak, realm);
-        });
     }
 
 
@@ -70,31 +62,46 @@ public class UserProfileService {
             dto.setFirstName(kcUser.getFirstName());
             dto.setLastName(kcUser.getLastName());
 
-
             Optional<UserProfile> optProfile = userProfileRepository.findByKeycloakId(kcUser.getId());
             if (optProfile.isPresent()) {
                 UserProfile profile = optProfile.get();
-                dto.setIdUserprofile(profile.getIdUserProfile());  // Ajout ID ici
+                dto.setIdUserprofile(profile.getIdUserprofile());  // Ajout ID ici
                 dto.setMatricule(profile.getMatricule());
                 dto.setAddress(profile.getAddress());
                 dto.setPhoneNumber(profile.getPhoneNumber());
                 dto.setKeycloakId(profile.getKeycloakId());
-                dto.setDateOfBirth(profile.getDateOfBirth());
-                dto.setRole(keycloakUserService.getUserRoleByKeycloakId(profile.getKeycloakId()));
             } else {
                 dto.setIdUserprofile(null);
                 dto.setMatricule(null);
                 dto.setAddress(null);
                 dto.setPhoneNumber(null);
-                dto.setDateOfBirth(null);
                 dto.setKeycloakId(kcUser.getId());
-
             }
 
             return dto;
         }).collect(Collectors.toList());
     }
 
+
+
+    public void deleteUserProfile(Long idUserprofile) {
+        Optional<UserProfile> optional = userProfileRepository.findById(idUserprofile);
+        if (optional.isPresent()) {
+            UserProfile profile = optional.get();
+            try {
+                keycloakUserService.deleteUserById(profile.getKeycloakId());
+                userProfileRepository.deleteById(idUserprofile);
+            } catch (Exception e) {
+                // Log l’erreur
+                System.err.println("Erreur lors de la suppression dans Keycloak ou base : " + e.getMessage());
+                throw new RuntimeException("Erreur lors de la suppression de l'utilisateur");
+            }
+        } else {
+            throw new RuntimeException("Utilisateur non trouvé");
+        }
+
+
+    }
 
 
     public UserProfileDTO getUserProfileById(Long idUserprofile) {
@@ -112,19 +119,17 @@ public class UserProfileService {
 
         // Créer le DTO complet
         UserProfileDTO dto = new UserProfileDTO();
-        dto.setIdUserprofile(profile.getIdUserProfile());
+        dto.setIdUserprofile(profile.getIdUserprofile());
         dto.setKeycloakId(profile.getKeycloakId());
         dto.setMatricule(profile.getMatricule());
         dto.setAddress(profile.getAddress());
         dto.setPhoneNumber(profile.getPhoneNumber());
-        dto.setDateOfBirth(profile.getDateOfBirth());
 
         // Remplir les données Keycloak
         dto.setUsername(kcUser.getUsername());
         dto.setEmail(kcUser.getEmail());
         dto.setFirstName(kcUser.getFirstName());
         dto.setLastName(kcUser.getLastName());
-
 
         return dto;
     }
@@ -135,46 +140,5 @@ public class UserProfileService {
 
 
 
-
-    public void delete(Long id) {
-        if (userProfileRepository.existsById(id)) {
-            userProfileRepository.deleteById(id);
-        }
-    }
-    /*UPDATE*/
-
-    public Optional<UserProfile> update(Long id, UserProfileDTO dto) {
-        return userProfileRepository.findById(id).map(existingUser -> {
-            if (existingUser.getKeycloakId() != null) {
-                keycloakUserService.updateUserInKeycloak(dto, existingUser.getKeycloakId());
-            }
-            if (dto.getDateOfBirth() != null) {
-                existingUser.setDateOfBirth(dto.getDateOfBirth());
-            }
-            if (dto.getPhoneNumber() != null) {
-                existingUser.setPhoneNumber(dto.getPhoneNumber());
-            }
-            if (dto.getKeycloakId() != null) {
-                existingUser.setKeycloakId(dto.getKeycloakId());
-
-            }
-            if (dto.getAddress() != null) {
-                existingUser.setAddress(dto.getAddress());
-
-            }
-            if (dto.getMatricule() != null) {
-                existingUser.setMatricule(dto.getMatricule());
-
-            }
-
-            return userProfileRepository.save(existingUser);
-        });
-    }
-
-    public String getKeycloakIdById(Long idUserprofile) {
-        return userProfileRepository.findById(idUserprofile)
-                .map(userProfile -> userProfile.getKeycloakId())
-                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable pour id : " + idUserprofile));
-    }
 
 }
