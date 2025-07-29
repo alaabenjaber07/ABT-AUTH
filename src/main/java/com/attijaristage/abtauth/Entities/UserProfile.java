@@ -1,16 +1,19 @@
 package com.attijaristage.abtauth.Entities;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 
 import java.util.Date;
 
 @Entity
-@Table(name="user_profile")
 public class UserProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long idUserprofile;
-    private String keycloakId;
-    private Date dateOfBirth;
+    private String keycloakId; // Pour faire le lien avec Keycloak userId
     private String matricule;
     private String address;
     private String phoneNumber;
@@ -19,11 +22,9 @@ public class UserProfile {
     }
 
 
-    public UserProfile(Long id, String idKeycloak, Date dateOfBirth, String matricule, String address, String phoneNumber) {
-        this.idUserprofile = id;
-        this.keycloakId = idKeycloak;
-        this.dateOfBirth = dateOfBirth;
+    public UserProfile(String matricule, String keycloakId, String address,  String phoneNumber) {
         this.matricule = matricule;
+        this.keycloakId = keycloakId;
         this.address = address;
         this.phoneNumber = phoneNumber;
     }
@@ -60,28 +61,20 @@ public class UserProfile {
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
-    public Long getIdUserProfile() {
+
+    public Long getIdUserprofile() {
         return idUserprofile;
     }
 
-    public void setIdUserProfile(Long id) {
-        this.idUserprofile = id;
-    }
-    public Date getDateOfBirth() {
-        return dateOfBirth;
-    }
-
-    public void setDateOfBirth(Date dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
+    public void setIdUserprofile(Long idUserprofile) {
+        this.idUserprofile = idUserprofile;
     }
 
     @Override
     public String toString() {
         return "UserProfile{" +
-                "idUserprofile=" + idUserprofile +
+                "matricule='" + matricule + '\'' +
                 ", keycloakId='" + keycloakId + '\'' +
-                ", dateOfBirth=" + dateOfBirth +
-                ", matricule='" + matricule + '\'' +
                 ", address='" + address + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
                 '}';

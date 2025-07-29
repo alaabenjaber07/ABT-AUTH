@@ -10,3 +10,4 @@ import java.util.Optional;
 public interface UserProfileRepo extends JpaRepository<UserProfile, Long> {
     Optional<UserProfile> findByKeycloakId(String keycloakId);
 }
+
