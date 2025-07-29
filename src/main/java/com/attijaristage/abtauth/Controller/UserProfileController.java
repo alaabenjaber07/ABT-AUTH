@@ -58,7 +58,7 @@ public class UserProfileController {
         return ResponseEntity.ok(users);
     }
 
-    @DeleteMapping("/id")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> delete(@PathVariable Long id) {
         System.out.println("Suppression demandée pour l'ID: " + id);
@@ -92,7 +92,7 @@ public class UserProfileController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-    @GetMapping("/role/id")
+    @GetMapping("/role/{id}")
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<String> getUserRole(@RequestParam Long id) {
         String keycloakId=userProfileService.getKeycloakIdById(id);
