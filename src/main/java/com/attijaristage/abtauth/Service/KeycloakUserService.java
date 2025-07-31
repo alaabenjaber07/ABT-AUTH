@@ -48,8 +48,8 @@ public class KeycloakUserService {/*
         this.keycloak = KeycloakBuilder.builder()
                 .serverUrl("http://localhost:8080")  //URL of your Keycloak server
                 .realm(realm)                    // Realm used to authenticate (usually "master" for admin users)
-                .clientId(clientId)
-                .clientSecret(clientSecret)// Client ID with admin rights in that realm (usually "admin-cli")
+                .clientId(clientId)// Client ID with admin rights in that realm (usually "admin-cli")
+                .clientSecret(clientSecret)
                 .username(adminUsername)                  // Admin username
                 .password(adminPassword)                  // Admin password
                 .grantType(OAuth2Constants.PASSWORD) // We're using password-based authentication
