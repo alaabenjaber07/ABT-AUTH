@@ -67,18 +67,6 @@ public class KeycloakUserService {/*
             throw new IllegalArgumentException("L'identifiant Keycloak est null ou vide.");
         }
     }
-        public void validateUniqueEmail(String email, String currentUserId) {
-            List<UserRepresentation> usersWithSameEmail = keycloak.realm(realm)
-                    .users()
-                    .searchByEmail(email, true);
-
-            for (UserRepresentation user : usersWithSameEmail) {
-                // Vérifie que l'utilisateur trouvé n'est pas celui actuellement modifié (si update)
-                if (!user.getId().equals(currentUserId) && email.equalsIgnoreCase(user.getEmail())) {
-                    throw new RuntimeException("L'email '" + email + "' est déjà utilisé.");
-                }
-            }
-        }
     public String createUser(String username, String email, String firstName, String lastName, String password) {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(username);
@@ -108,89 +96,14 @@ public class KeycloakUserService {/*
 
         return userId;
     }
-        public void updateUserInKeycloak(UserProfileDTO dto, String keycloakId) {
-            if (keycloakId == null || keycloakId.isBlank()) {
-                throw new IllegalArgumentException("L'identifiant Keycloak est requis.");
-            }
 
-            UserResource userResource = keycloak.realm(realm).users().get(keycloakId);
-            UserRepresentation user = userResource.toRepresentation();
-
-            // Prépare les valeurs à vérifier (utilise les nouvelles valeurs si fournies, sinon celles existantes)
-            String newUsername = (dto.getUsername() != null && !dto.getUsername().isBlank()) ? dto.getUsername().trim() : user.getUsername();
-            String newEmail = (dto.getEmail() != null && !dto.getEmail().isBlank()) ? dto.getEmail().trim() : user.getEmail();
-
-            // Valide l'unicité mail avant mise à jour
-            if (!newEmail.equalsIgnoreCase(user.getEmail())) {
-                validateUniqueEmail(newEmail, keycloakId);
-            }
-
-            // Mise à jour des champs uniquement s’ils sont fournis dans dto
-            if (dto.getUsername() != null && !dto.getUsername().isBlank()) {
-                user.setUsername(newUsername);
-            }
-
-            if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
-                user.setEmail(newEmail);
-            } else if (user.getEmail() == null || user.getEmail().isBlank()) {
-                throw new RuntimeException("L'email est requis pour mettre à jour l'utilisateur dans Keycloak.");
-            }
-
-            if (dto.getFirstName() != null && !dto.getFirstName().isBlank()) {
-                user.setFirstName(dto.getFirstName().trim());
-            }
-            if (dto.getLastName() != null && !dto.getLastName().isBlank()) {
-                user.setLastName(dto.getLastName().trim());
-            }
-
-            try {
-                userResource.update(user);
-            } catch (BadRequestException e) {
-                System.err.println("Keycloak update failed:");
-                System.err.println("Email: " + user.getEmail());
-                System.err.println("Username: " + user.getUsername());
-                System.err.println("FirstName: " + user.getFirstName());
-                System.err.println("LastName: " + user.getLastName());
-                throw new RuntimeException("Échec de mise à jour Keycloak: " + e.getMessage(), e);
-            }
-
-            // Mise à jour du mot de passe si besoin
-            if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
-                CredentialRepresentation cred = new CredentialRepresentation();
-                cred.setType(CredentialRepresentation.PASSWORD);
-                cred.setValue(dto.getPassword());
-                cred.setTemporary(false);
-                userResource.resetPassword(cred);
-            }
-        }
-
-    public String getUserRoleByKeycloakId(String keycloakId) {
-        try {
-            List<String> roles = keycloak.realm(realm)
-                    .users()
-                    .get(keycloakId)
-                    .roles()
-                    .realmLevel()
-                    .listEffective()
-                    .stream()
-                    .map(role -> role.getName())
-                    .collect(Collectors.toList());
-
-            if (roles.contains("admin")) {
-                return "admin";
-            } else if (roles.contains("bancaire")) {
-                return "bancaire";
-            } else {
-                return "aucun rôle";
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Erreur lors de la récupération du rôle de l'utilisateur " + keycloakId, e);
-        }
-    }
     private String getCreatedId(Response response) {
         String path = response.getLocation().getPath();
         return path.substring(path.lastIndexOf('/') + 1);
     }
+
+
+
     public String login(String username, String password) {
         Keycloak keycloakLogin = KeycloakBuilder.builder()
                 .serverUrl("http://localhost:8080")
@@ -227,6 +140,15 @@ public class KeycloakUserService {/*
         return keycloak.realm("carthago-realm").users().list();
     }
 
+    public void deleteUserById(String keycloakId) {
+        try {
+            keycloak.realm(realm).users().get(keycloakId).remove();
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la suppression dans Keycloak : " + e.getMessage());
+        }
+    }
+
+
     public UserRepresentation getUserById(String keycloakId) {
         try {
             return keycloak.realm(realm).users().get(keycloakId).toRepresentation();
@@ -235,5 +157,51 @@ public class KeycloakUserService {/*
             return null;
         }
     }
+
+    public void updateUser(String id, String firstName, String lastName, String email) {
+        if (id == null || id.isEmpty()) {
+            throw new IllegalArgumentException("❌ keycloakId est null ou vide !");
+        }
+
+        UserRepresentation user = keycloak.realm(realm)
+                .users()
+                .get(id)
+                .toRepresentation();
+
+        // Ne modifie PAS username ici
+        // user.setUsername(username);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+
+        keycloak.realm(realm).users().get(id).update(user);
+    }
+        public String getUserRoleByKeycloakId(String keycloakId) {
+            try {
+                List<String> roles = keycloak.realm(realm)
+                        .users()
+                        .get(keycloakId)
+                        .roles()
+                        .realmLevel()
+                        .listEffective()
+                        .stream()
+                        .map(role -> role.getName())
+                        .collect(Collectors.toList());
+
+                if (roles.contains("admin")) {
+                    return "admin";
+                } else if (roles.contains("bancaire")) {
+                    return "bancaire";
+                } else {
+                    return "aucun rôle";
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Erreur lors de la récupération du rôle de l'utilisateur " + keycloakId, e);
+            }
+        }
+
+
+
+
 
 }

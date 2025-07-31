@@ -69,7 +69,7 @@ public class UserProfileController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/id")
+    @GetMapping("/{id}")
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<?> getUserProfile(@RequestParam Long id) {
         try {
@@ -82,16 +82,7 @@ public class UserProfileController {
         }
     }
 
-    @PatchMapping
-    @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<UserProfile> update(@RequestBody UserProfileDTO dto) {
-        if (dto.getIdUserprofile() == null) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        return userProfileService.update(dto.getIdUserprofile(), dto)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
+
     @GetMapping("/role/{id}")
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<String> getUserRole(@RequestParam Long id) {
@@ -108,6 +99,20 @@ public class UserProfileController {
         String keycloakId=userProfileService.getKeycloakIdById(userId);
         keycloakUserService.setUserRole(keycloakId, role);
         return ResponseEntity.ok("Rôle '" + role + "' assigné avec succès à l'utilisateur.");
+    }
+
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> updateUserProfile(@PathVariable Long id, @RequestBody UserProfileDTO dto) {
+        try {
+            userProfileService.updateUserProfile(id, dto);
+            return ResponseEntity.ok("Utilisateur mis à jour avec succès.");
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Utilisateur non trouvé.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors de la mise à jour : " + e.getMessage());
+        }
     }
 
 
