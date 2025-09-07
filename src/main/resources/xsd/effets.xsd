@@ -1,0 +1,48 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified">
+
+    <xs:element name="effets">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="effet" type="EffetType" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="EffetType">
+        <xs:sequence>
+            <xs:element name="idEffet" type="xs:long" minOccurs="0"/>
+            <xs:element name="reference" type="xs:string"/>
+            <xs:element name="tireur" type="xs:string"/>
+            <xs:element name="tiré" type="xs:string" minOccurs="0"/>
+            <xs:element name="beneficiaire" type="xs:string"/>
+            <xs:element name="montant" type="xs:decimal"/>
+            <xs:element name="dateEmission" type="xs:date"/>
+            <xs:element name="dateEcheance" type="xs:date"/>
+            <xs:element name="etat" type="xs:string"/>
+            <xs:element name="typeEffet">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="LETTRE_DE_CHANGE"/>
+                        <xs:enumeration value="BILLET_A_ORDRE"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="ibanTireur">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:pattern value="TN[0-9]{22}"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="ibanTire" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:pattern value="TN[0-9]{22}"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

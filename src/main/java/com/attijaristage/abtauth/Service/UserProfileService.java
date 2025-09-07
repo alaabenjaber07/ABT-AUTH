@@ -128,10 +128,7 @@ public class UserProfileService {
 
         return dto;
     }
-    public UserProfile getByKeycloakId(String keycloakId) {
-        return userProfileRepository.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable avec le keycloakId : " + keycloakId));
-    }
+
 
 
     public void updateUserProfile(Long idUserprofile, UserProfileDTO dto) {
@@ -173,6 +170,10 @@ public class UserProfileService {
         return userProfileRepository.findById(idUserprofile)
                 .map(userProfile -> userProfile.getKeycloakId())
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable pour id : " + idUserprofile));
+    }
+    public Long getIdByKeycloakId(String KId){
+         Optional<UserProfile> user= userProfileRepository.findByKeycloakId(KId);
+         return user.get().getIdUserProfile();
     }
 
 }

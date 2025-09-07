@@ -28,7 +28,7 @@ public class UserProfileController {
     private UserProfileService userProfileService;
     @Autowired
     private KeycloakUserService keycloakUserService;
-    private UserProfileDTO dto;
+
 
     @PostMapping("/register")
     @PreAuthorize("hasRole('admin')")
@@ -71,8 +71,21 @@ public class UserProfileController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<?> getUserProfile(@RequestParam Long id) {
+    public ResponseEntity<?> getUserProfile(@PathVariable Long id) {
         try {
+            UserProfileDTO dto = userProfileService.getUserProfileById(id);
+            return ResponseEntity.ok(dto);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Utilisateur introuvable.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne : " + e.getMessage());
+        }
+    }
+    @GetMapping("/by-keycloak-id/{kid}")
+    @PreAuthorize("hasAnyRole('admin', 'user')")
+    public ResponseEntity<?> getUserProfileByKeycloakId(@PathVariable String kid) {
+        try {
+            Long id = userProfileService.getIdByKeycloakId(kid);
             UserProfileDTO dto = userProfileService.getUserProfileById(id);
             return ResponseEntity.ok(dto);
         } catch (NoSuchElementException e) {
@@ -83,9 +96,10 @@ public class UserProfileController {
     }
 
 
+
     @GetMapping("/role/{id}")
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<String> getUserRole(@RequestParam Long id) {
+    public ResponseEntity<String> getUserRole(@PathVariable Long id) {
         String keycloakId=userProfileService.getKeycloakIdById(id);
         String role = keycloakUserService.getUserRoleByKeycloakId(keycloakId);
         return ResponseEntity.ok(role);

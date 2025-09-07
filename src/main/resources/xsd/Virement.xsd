@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        targetNamespace="urn:bfi:tunisia:virement"
+        xmlns="urn:bfi:tunisia:virement"
+        elementFormDefault="qualified"
+        attributeFormDefault="unqualified">
+
+    <!-- ==== Simple types ==== -->
+    <xs:simpleType name="RIB20">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\d{20}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Max140Text">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="140"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="InstructionVirement">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="URGENT"/>
+            <xs:enumeration value="STANDARD"/>
+            <xs:enumeration value="RETARDABLE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="ModeVirement">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="IMMEDIAT"/>
+            <xs:enumeration value="DIFFERE"/>
+            <xs:enumeration value="PERMANENT"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="StatusVirement">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="EN_ATTENTE"/>
+            <xs:enumeration value="TRAITE"/>
+            <xs:enumeration value="REJETE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Amount15_3_Positive">
+        <xs:restriction base="xs:decimal">
+            <xs:totalDigits value="15"/>
+            <xs:fractionDigits value="3"/>
+            <xs:minExclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- ==== Root element ==== -->
+    <xs:element name="Virement" type="VirementType"/>
+
+    <xs:complexType name="VirementType">
+        <xs:sequence>
+            <xs:element name="id" type="xs:long" minOccurs="0"/>
+            <xs:element name="guichet" type="xs:string"/>
+            <xs:element name="dateVirement" type="xs:date"/>
+            <xs:element name="nomDonneur" type="Max140Text"/>
+            <xs:element name="compteSource" type="RIB20"/>
+            <xs:element name="montant" type="Amount15_3_Positive"/>
+            <xs:element name="devise" type="xs:string" fixed="TND"/>
+            <xs:element name="beneficiaireNom" type="Max140Text"/>
+            <xs:element name="beneficiaireAdresse" type="xs:string" minOccurs="0"/>
+            <xs:element name="compteDestination" type="RIB20"/>
+            <xs:element name="instructions" type="InstructionVirement"/>
+            <xs:element name="modeVirement" type="ModeVirement"/>
+            <xs:element name="status" type="StatusVirement"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>
