@@ -1,9 +1,12 @@
 package com.attijaristage.abtauth.Controller;
 
+import com.attijaristage.abtauth.DTO.ChangePasswordRequest;
 import com.attijaristage.abtauth.DTO.LoginDTO;
 import com.attijaristage.abtauth.DTO.UserProfileDTO;
 import com.attijaristage.abtauth.Entities.UserProfile;
+import com.attijaristage.abtauth.Service.EmailService;
 import com.attijaristage.abtauth.Service.KeycloakUserService;
+import com.attijaristage.abtauth.Service.PasswordService;
 import com.attijaristage.abtauth.Service.UserProfileService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import jakarta.validation.Valid;
@@ -28,13 +31,17 @@ public class UserProfileController {
     private UserProfileService userProfileService;
     @Autowired
     private KeycloakUserService keycloakUserService;
-
-
+    @Autowired
+    private EmailService emailService;
+    @Autowired
+    private PasswordService passwordService;
     @PostMapping("/register")
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<?> register(@RequestBody UserProfileDTO dto) {
         try {
             userProfileService.registerUser(dto);
+            String fullname=dto.getFirstName()+" "+dto.getLastName();
+            emailService.sendCredentials(dto.getEmail(),fullname,dto.getPassword());
             return ResponseEntity.ok("Utilisateur créé avec succès !");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Erreur : " + e.getMessage());
@@ -126,6 +133,20 @@ public class UserProfileController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Erreur lors de la mise à jour : " + e.getMessage());
+        }
+    }
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @RequestBody ChangePasswordRequest request,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            String realm = "carthago-realm"; // ton realm Keycloak
+            passwordService.changePassword(token, realm, request);
+            return ResponseEntity.ok("Mot de passe changé avec succès ✅");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erreur : " + e.getMessage());
         }
     }
 

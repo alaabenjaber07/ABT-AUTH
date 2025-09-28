@@ -151,6 +151,7 @@ public class UserProfileService {
                 dto.getFirstName(),
                 dto.getLastName(),
                 dto.getEmail()
+
         );
 
         System.out.println("✅ Keycloak ID utilisé pour update : " + existing.getKeycloakId());
