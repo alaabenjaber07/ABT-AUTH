@@ -2,6 +2,8 @@ package com.attijaristage.abtauth.Service;
 
 import com.attijaristage.abtauth.DTO.VirementDTO;
 import com.attijaristage.abtauth.DTO.VirementMapper;
+import com.attijaristage.abtauth.Entities.Enum.StatusVirement;
+import com.attijaristage.abtauth.Entities.UserProfile;
 import com.attijaristage.abtauth.Entities.Virement;
 import com.attijaristage.abtauth.Repository.VirementRepository;
 import org.springframework.beans.BeanUtils;
@@ -20,12 +22,16 @@ public class VirementService {
     @Autowired
     private VirementRepository virementRepository;
 
-    public VirementDTO ajouterVirement(VirementDTO dto) {
+    public VirementDTO ajouterVirement(VirementDTO dto, UserProfile user) {
         Virement virement = new Virement();
         BeanUtils.copyProperties(dto, virement);
+        virement.setUser(user);
         Virement saved = virementRepository.save(virement);
-        BeanUtils.copyProperties(saved, dto);
-        return dto;
+        VirementDTO responseDTO = new VirementDTO();
+        BeanUtils.copyProperties(saved, responseDTO);
+        responseDTO.setUser(user);
+        return responseDTO;
+
     }
 
     public List<VirementDTO> getAllVirementsDTO() {
@@ -42,25 +48,14 @@ public class VirementService {
         virementRepository.deleteById(id);
     }
 
-    public VirementDTO updateVirement(Long id, VirementDTO virementDTO) {
+    public VirementDTO updateVirement(Long id, String status) {
         Optional<Virement> existingOpt = virementRepository.findById(id);
         if (!existingOpt.isPresent()) {
             throw new RuntimeException("Virement introuvable avec l'ID : " + id);
         }
 
         Virement existing = existingOpt.get();
-
-        // Tu peux adapter : ici on copie tous les champs depuis le DTO
-        existing.setGuichet(virementDTO.getGuichet());
-        existing.setDateVirement(virementDTO.getDateVirement());
-        existing.setNomDonneur(virementDTO.getNomDonneur());
-        existing.setCompteSource(virementDTO.getCompteSource());
-        existing.setMontant(virementDTO.getMontant());
-        existing.setBeneficiaireNom(virementDTO.getBeneficiaireNom());
-        existing.setBeneficiaireAdresse(virementDTO.getBeneficiaireAdresse());
-        existing.setCompteDestination(virementDTO.getCompteDestination());
-        existing.setInstructions(virementDTO.getInstructions());
-        existing.setModeVirement(virementDTO.getModeVirement());
+        existing.setStatus(StatusVirement.valueOf(status));
 
         // Sauvegarde
         Virement saved = virementRepository.save(existing);
@@ -110,6 +105,7 @@ public class VirementService {
         }
         return stats;
     }
+
 
 
 

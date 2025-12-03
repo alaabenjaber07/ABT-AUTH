@@ -1,12 +1,15 @@
 package com.attijaristage.abtauth.Controller;
 
 import com.attijaristage.abtauth.Entities.Cheque;
+import com.attijaristage.abtauth.Entities.UserProfile;
+import com.attijaristage.abtauth.Repository.UserProfileRepo;
 import com.attijaristage.abtauth.Service.ChequeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -17,22 +20,31 @@ public class ChequeController {
 
     @Autowired
     private ChequeService chequeService;
-
-    // Créer un nouveau chèque
+    @Autowired
+    private UserProfileRepo userProfileRepo;
     @PostMapping("/create")
-    public ResponseEntity<Object> createCheque(@RequestBody Cheque cheque) {
+    public ResponseEntity<Object> createCheque(@RequestBody Cheque cheque, Principal principal) {
         try {
+            // Récupérer le user depuis le principal (JWT Keycloak)
+            String keycloakId = principal.getName();  // ou utiliser SecurityContextHolder
+            UserProfile user = userProfileRepo.findByKeycloakId(keycloakId)
+                    .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+
+            // Créer le chèque avec l'utilisateur récupéré côté serveur
             Cheque createdCheque = chequeService.createCheque(
                     cheque.getChequeNumber(),
                     cheque.getAmount(),
                     cheque.getBeneficiary(),
-                    cheque.getDueDate()
+                    cheque.getDueDate(),
+                    user
             );
+
             return ResponseEntity.ok(createdCheque);
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(400).body(e.getMessage()); // Retourner un message d'erreur si le chèque existe déjà
+            return ResponseEntity.status(400).body(e.getMessage());
         }
     }
+
 
 
     @GetMapping

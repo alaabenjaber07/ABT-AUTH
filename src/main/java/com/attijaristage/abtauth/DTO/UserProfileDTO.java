@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Data
@@ -14,23 +15,21 @@ public class UserProfileDTO {
     private String username;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
+    @JsonProperty("role")
     private String role;
     @Email
     private String email;
     private String firstName;
     private String lastName;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private Date dateOfBirth;
+    private LocalDate dateOfBirth;
     private String matricule;
     private String address;
     private String phoneNumber;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String keycloakId;
 
-    public UserProfileDTO(String keycloakId, String matricule, String address, String phoneNumber, Date dateOfBirth) {
-    }
-
-    public UserProfileDTO(String username, String password, String email, String firstName, String lastName, Date dateOfBirth, String matricule, String address, String phoneNumber, String keycloakId) {
+    public UserProfileDTO(String username, String password, String email, String firstName, String lastName, LocalDate dateOfBirth, String matricule, String address, String phoneNumber, String keycloakId) {
         this.username = username;
         this.password = password;
         this.email = email;
@@ -43,7 +42,7 @@ public class UserProfileDTO {
         this.keycloakId = keycloakId;
     }
 
-    public UserProfileDTO(Date dateOfBirth, String phoneNumber, String idKeycloak) {
+    public UserProfileDTO(LocalDate dateOfBirth, String phoneNumber, String idKeycloak) {
         this.keycloakId = idKeycloak;
         this.dateOfBirth = dateOfBirth;
         this.phoneNumber = phoneNumber;
@@ -60,11 +59,11 @@ public class UserProfileDTO {
     }
 
 
-    public Date getDateOfBirth() {
+    public LocalDate getDateOfBirth() {
         return dateOfBirth;
     }
 
-    public void setDateOfBirth(Date dateOfBirth) {
+    public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
     }
 
@@ -171,6 +170,6 @@ public class UserProfileDTO {
                 ", address='" + address + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
                 ", keycloakId='" + keycloakId + '\'' +
-                '}';
+                '}'+"role="+role;
     }
 }

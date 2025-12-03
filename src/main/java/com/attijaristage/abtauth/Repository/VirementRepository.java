@@ -31,6 +31,7 @@ public interface VirementRepository extends JpaRepository<Virement, Long> {
     // Nombre de virements par type d'instruction
     @Query("SELECT v.instructions, COUNT(v) FROM Virement v GROUP BY v.instructions")
     List<Object[]> countVirementsByInstruction();
-
+    @Query("SELECT v.user.keycloakId , COUNT(v) FROM Virement v GROUP BY v.user.keycloakId")
+    List<Object[]> countVirementsByUser();
 
 }

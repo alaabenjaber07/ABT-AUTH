@@ -1,15 +1,20 @@
 package com.attijaristage.abtauth.Controller;
 
 import com.attijaristage.abtauth.DTO.VirementDTO;
+import com.attijaristage.abtauth.Entities.UserProfile;
 import com.attijaristage.abtauth.Entities.Virement;
+import com.attijaristage.abtauth.Repository.UserProfileRepo;
 import com.attijaristage.abtauth.Repository.VirementRepository;
 import com.attijaristage.abtauth.Service.Validation.XmlValidationService;
 import com.attijaristage.abtauth.Service.VirementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,24 +28,40 @@ public class VirementController {
 
     @Autowired
     private VirementRepository virementRepository;
-
+    @Autowired
+    private UserProfileRepo userProfileRepo;
 
     @Autowired
     private XmlValidationService xmlValidationService;
+
+
     @PostMapping("/create")
-    public ResponseEntity<String> addVirement(@RequestBody VirementDTO virementDTO) {
+    public ResponseEntity<String> addVirement(@RequestBody VirementDTO virementDTO, Principal principal) {
         try {
-            // 1) Validation XML
             xmlValidationService.marshalAndValidate(virementDTO);
 
-            // 2) si exacte dans BD sinon efface
-            virementService.ajouterVirement(virementDTO);
+            // Vérifie si Principal est JwtAuthenticationToken
+            String keycloakId;
+            if (principal instanceof JwtAuthenticationToken jwtToken) {
+                Jwt jwt = jwtToken.getToken();
+                keycloakId = jwt.getSubject(); // généralement le claim "sub"
+                // ou si tu stockes un autre claim dans Keycloak
+                // keycloakId = jwt.getClaimAsString("preferred_username");
+            } else {
+                keycloakId = principal.getName();
+            }
+
+            UserProfile user = userProfileRepo.findByKeycloakId(keycloakId)
+                    .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+
+            virementService.ajouterVirement(virementDTO, user);
             return ResponseEntity.ok("✅ Virement ajouté avec succès");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("❌ Erreur (validation XML): " + e.getMessage());
         }
     }
+
     @PostMapping("/validate-xml")
     public ResponseEntity<?> validateXml(@RequestBody VirementDTO virementDTO) {
         try {
@@ -75,9 +96,9 @@ public class VirementController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateVirement(@PathVariable Long id, @RequestBody VirementDTO virementDTO) {
+    public ResponseEntity<?> updateVirement(@PathVariable Long id, @RequestBody String status) {
         try {
-            VirementDTO updated = virementService.updateVirement(id, virementDTO);
+            VirementDTO updated = virementService.updateVirement(id, status);
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Erreur : " + e.getMessage());

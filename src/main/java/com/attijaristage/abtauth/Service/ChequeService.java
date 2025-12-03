@@ -1,13 +1,16 @@
 package com.attijaristage.abtauth.Service;
 
+import com.attijaristage.abtauth.DTO.UserProfileDTO;
 import com.attijaristage.abtauth.Entities.Enum.ChequeStatus;
 import com.attijaristage.abtauth.Entities.Cheque;
+import com.attijaristage.abtauth.Entities.UserProfile;
 import com.attijaristage.abtauth.Repository.ChequeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -18,13 +21,15 @@ public class ChequeService {
     @Autowired
     private ChequeRepository chequeRepository;
 
+    @Autowired
+    private UserProfileService userProfileService;
     // Récupérer tous les chèques
     public List<Cheque> getAllCheques() {
         return chequeRepository.findAll();
     }
 
     // Créer un nouveau chèque
-    public Cheque createCheque(String chequeNumber, BigDecimal amount, String beneficiary, Date dueDate) {
+    public Cheque createCheque(String chequeNumber, BigDecimal amount, String beneficiary, Date dueDate, UserProfile user) {
         Optional<Cheque> existingCheque = chequeRepository.findByChequeNumber(chequeNumber);
         if (existingCheque.isPresent()) {
             throw new IllegalStateException("Cheque with number " + chequeNumber + " already exists.");
@@ -34,9 +39,11 @@ public class ChequeService {
         cheque.setChequeNumber(chequeNumber);
         cheque.setAmount(amount);
         cheque.setBeneficiary(beneficiary);
-        cheque.setIssueDate(new Date()); // Date actuelle
+        cheque.setIssueDate(LocalDate.now());
         cheque.setDueDate(dueDate);
         cheque.setStatus(ChequeStatus.EN_COURS);
+        cheque.setUser(user);
+
 
         return chequeRepository.save(cheque);
     }

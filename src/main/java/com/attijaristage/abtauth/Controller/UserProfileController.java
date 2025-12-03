@@ -2,6 +2,7 @@ package com.attijaristage.abtauth.Controller;
 
 import com.attijaristage.abtauth.DTO.ChangePasswordRequest;
 import com.attijaristage.abtauth.DTO.LoginDTO;
+import com.attijaristage.abtauth.DTO.ResetPasswordRequest;
 import com.attijaristage.abtauth.DTO.UserProfileDTO;
 import com.attijaristage.abtauth.Entities.UserProfile;
 import com.attijaristage.abtauth.Service.EmailService;
@@ -13,6 +14,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +41,7 @@ public class UserProfileController {
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<?> register(@RequestBody UserProfileDTO dto) {
         try {
+            System.out.println(dto);
             userProfileService.registerUser(dto);
             String fullname=dto.getFirstName()+" "+dto.getLastName();
             emailService.sendCredentials(dto.getEmail(),fullname,dto.getPassword());
@@ -135,20 +138,38 @@ public class UserProfileController {
                     .body("Erreur lors de la mise à jour : " + e.getMessage());
         }
     }
-    @PutMapping("/change-password")
-    public ResponseEntity<?> changePassword(
-            @RequestBody ChangePasswordRequest request,
-            @RequestHeader("Authorization") String authHeader
-    ) {
+    @PostMapping("/change-password")
+    public ResponseEntity<String> changePassword(@RequestBody ChangePasswordRequest request) {
         try {
-            String token = authHeader.replace("Bearer ", "");
-            String realm = "carthago-realm"; // ton realm Keycloak
-            passwordService.changePassword(token, realm, request);
+            passwordService.changePassword(request.getUsername(), request);
             return ResponseEntity.ok("Mot de passe changé avec succès ✅");
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest().body("Erreur : " + e.getMessage());
         }
     }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
+        try {
+            keycloakUserService.sendResetPasswordEmail(email);
+            return ResponseEntity.ok("Email de réinitialisation envoyé.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors de l'envoi de l'email : " + e.getMessage());
+        }
+    }
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest req) {
+        try {
+            keycloakUserService.resetPassword(req.getKey(), req.getNewPassword());
+            return ResponseEntity.ok("Mot de passe réinitialisé !");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Erreur : " + e.getMessage());
+        }
+    }
+
+
 
 
 

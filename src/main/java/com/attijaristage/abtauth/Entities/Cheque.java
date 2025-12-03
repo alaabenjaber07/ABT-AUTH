@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -27,13 +28,25 @@ public class Cheque {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     @Column(name = "issue_date", nullable = false)
-    private Date issueDate;
+    private LocalDate issueDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ChequeStatus status;
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "idUserprofile") // clé étrangère vers User
+    private UserProfile user;
 
     // --- Getters and Setters ---
+
+
+    public UserProfile getUser() {
+        return user;
+    }
+
+    public void setUser(UserProfile user) {
+        this.user = user;
+    }
 
     public String getChequeNumber() {
         return chequeNumber;
@@ -67,11 +80,11 @@ public class Cheque {
         this.dueDate = dueDate;
     }
 
-    public Date getIssueDate() {
+    public LocalDate getIssueDate() {
         return issueDate;
     }
 
-    public void setIssueDate(Date issueDate) {
+    public void setIssueDate(LocalDate issueDate) {
         this.issueDate = issueDate;
     }
 

@@ -33,7 +33,7 @@ public class Effets {
     private TypeEffet typeEffet;
     private LocalDate dateAjout;
     @ManyToOne
-    @JoinColumn(name = "user_id") // clé étrangère vers User
+    @JoinColumn(name = "user_id", referencedColumnName = "idUserprofile") // clé étrangère vers User
     private UserProfile user;
     public Effets(){}
 

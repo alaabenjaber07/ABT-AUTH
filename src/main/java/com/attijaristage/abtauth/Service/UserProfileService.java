@@ -4,6 +4,7 @@ import com.attijaristage.abtauth.DTO.UserProfileDTO;
 import com.attijaristage.abtauth.DTO.UserProfileMapper;
 import com.attijaristage.abtauth.Entities.UserProfile;
 import com.attijaristage.abtauth.Repository.UserProfileRepo;
+import jakarta.transaction.Transactional;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ public class UserProfileService {
     @Autowired
     private UserProfileRepo userProfileRepository;
     private String realm="carthago-realm";
+    @Transactional
     public void registerUser(UserProfileDTO dto) {
         // 1. Créer dans Keycloak
         String keycloakId = keycloakUserService.createUser(
@@ -40,6 +42,7 @@ public class UserProfileService {
         profile.setDateOfBirth(dto.getDateOfBirth());
 
         userProfileRepository.save(profile);
+        userProfileRepository.flush();
     }
 
 

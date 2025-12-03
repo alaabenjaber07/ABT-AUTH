@@ -3,8 +3,11 @@ package com.attijaristage.abtauth.Repository;
 import com.attijaristage.abtauth.Entities.Effets;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 @Repository
@@ -21,7 +24,9 @@ public interface EffetsRepo extends JpaRepository<Effets, Long> {
 
     @Query("SELECT e.user.keycloakId, COUNT(e) FROM Effets e GROUP BY e.user.keycloakId")
     List<Object[]> countEffetsByUser();
-    @Query("SELECT e.etat, COUNT(e) FROM Effets e GROUP BY e.etat")  // <-- corrigé ici
+    @Query("SELECT e.etat, COUNT(e) FROM Effets e GROUP BY e.etat")  //
     List<Object[]> countEffetsByEtat();
+
+
 }
 

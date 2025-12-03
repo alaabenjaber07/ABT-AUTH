@@ -4,11 +4,13 @@ package com.attijaristage.abtauth.Service;
 import com.attijaristage.abtauth.DTO.UserProfileDTO;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
+import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,9 +53,10 @@ public class KeycloakUserService {/*
                 .realm(realm)                    // Realm used to authenticate (usually "master" for admin users)
                 .clientId(clientId)// Client ID with admin rights in that realm (usually "admin-cli")
                 .clientSecret(clientSecret)
-                .username(adminUsername)                  // Admin username
-                .password(adminPassword)                  // Admin password
-                .grantType(OAuth2Constants.PASSWORD) // We're using password-based authentication
+                //.username(adminUsername)                  // Admin username
+                //.password(adminPassword)                  // Admin password
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .resteasyClient(new ResteasyClientBuilderImpl().connectionPoolSize(10).build())
                 .build();
     }
 
@@ -74,19 +78,22 @@ public class KeycloakUserService {/*
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setEnabled(true);
-
+        System.out.println("=========DEBUG CREATE/ "+ user);
         Response response = keycloak.realm("carthago-realm").users().create(user);
         if(response.getStatus()==409){
             throw new RuntimeException("Utilisateur existant! Veuillez Modifier l'addresse Email ou Username" );
 
-        }else {
+        }
+        else {
             if (response.getStatus() != 201) {
-                throw new RuntimeException("Erreur création utilisateur Keycloak: HTTP " + response.getStatus());
+                String body = response.readEntity(String.class); // le corps de la réponse JSON
+                throw new RuntimeException("Erreur création utilisateur Keycloak : HTTP "
+                        + response.getStatus() + " - " + body);
             }
         }
 
         String userId = getCreatedId(response);
-
+        System.out.println("DEBUG +++++++++++ CREATED ID "+userId);
         CredentialRepresentation credential = new CredentialRepresentation();
         credential.setTemporary(false);
         credential.setType(CredentialRepresentation.PASSWORD);
@@ -122,18 +129,47 @@ public class KeycloakUserService {/*
         if (!List.of("admin", "bancaire").contains(roleName)) {
             throw new IllegalArgumentException("Rôle invalide : " + roleName);
         }
-        RoleRepresentation role = keycloak.realm(realm).roles().get(roleName).toRepresentation();
-        List<RoleRepresentation> currentRoles = keycloak.realm(realm).users().get(keycloakId).roles().realmLevel().listEffective();
-        List<RoleRepresentation> toRemove = currentRoles.stream()
-                .filter(r -> r.getName().equals("admin") || r.getName().equals("bancaire"))
-                .collect(Collectors.toList());
-        keycloak.realm(realm).users().get(keycloakId).roles().realmLevel().remove(toRemove);
-        keycloak.realm(realm)
-                .users()
-                .get(keycloakId)
-                .roles()
-                .realmLevel()
-                .add(List.of(role));
+        try {
+            System.out.println("Roles disponibles dans le realm :");
+            keycloak.realm(realm).roles().list()
+                    .forEach(r -> System.out.println(r.getName()));
+
+            RoleRepresentation role = keycloak.realm(realm).roles().get(roleName).toRepresentation();
+            List<RoleRepresentation> currentRoles = keycloak.realm(realm).users().get(keycloakId).roles().realmLevel().listEffective();
+            List<RoleRepresentation> toRemove = currentRoles.stream()
+                    .filter(r -> r.getName().equals("admin") || r.getName().equals("bancaire"))
+                    .collect(Collectors.toList());
+            keycloak.realm(realm).users().get(keycloakId).roles().realmLevel().remove(toRemove);
+
+
+            keycloak.realm(realm)
+                    .users()
+                    .get(keycloakId)
+                    .roles()
+                    .realmLevel()
+                    .add(List.of(role));
+            if(roleName.equals("admin")) {
+                RoleRepresentation manageUsersRole = keycloak.realm(realm)
+                        .clients()
+                        .get(clientId)
+                        .roles()
+                        .get("manage-users")
+                        .toRepresentation();
+
+                RoleRepresentation manageRealmRole = keycloak.realm(realm)
+                        .clients()
+                        .get(clientId)
+                        .roles()
+                        .get("manage-realm")
+                        .toRepresentation();
+                keycloak.realm(realm).users().get(keycloakId).roles().clientLevel(clientId).add(List.of(manageUsersRole, manageRealmRole));
+            }
+
+
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
     }
 
     public List<UserRepresentation> getAllUsers() {
@@ -201,10 +237,56 @@ public class KeycloakUserService {/*
         }
 
 
+    public void changeUserPassword(String userId, String newPassword) {
+        UserResource userResource = keycloak.realm(realm).users().get(userId);
 
+        CredentialRepresentation cred = new CredentialRepresentation();
+        cred.setType(CredentialRepresentation.PASSWORD);
+        cred.setValue(newPassword);
+        cred.setTemporary(false);
 
+        userResource.resetPassword(cred);
+    }
+    public String getUserIdByUsername(String username) {
+        return keycloak.realm(realm).users().search(username).stream()
+                .filter(u -> u.getUsername().equals(username))
+                .findFirst()
+                .map(UserRepresentation::getId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    }
+    public void sendResetPasswordEmail(String email){
+        try {
+            UsersResource usersResource = keycloak.realm(realm).users();
+            List<UserRepresentation> users = usersResource.search(null, null, null, email, 0, 1);
+            for (UserRepresentation u : users) {
+                System.out.println("User: " + u.getUsername() + " | " + u.getEmail());
+            }
+            if (users.isEmpty()) {
+                throw new RuntimeException("Utilisateur non trouvé !");
+            }
 
-
-
-
+            UserResource user = usersResource.get(users.get(0).getId());
+            List<String> actions = Collections.singletonList("UPDATE_PASSWORD");
+            Integer lifespan = 3600;
+            String finalRedirectUrl = "http://localhost:4200/account/login";
+            user.executeActionsEmail("carthago-client-angular",finalRedirectUrl,actions);
+            // Keycloak envoie le mail
+        }catch(Exception e){
+            System.out.println(e.getMessage());
+        }
+    }
+    public void resetPassword(String userId, String newPassword) {
+        UserResource userResource = keycloak.realm(realm).users().get(userId);
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue(newPassword);
+        credential.setTemporary(false); // false = mot de passe permanent
+        userResource.resetPassword(credential);
+    }
 }
+
+
+
+
+
+

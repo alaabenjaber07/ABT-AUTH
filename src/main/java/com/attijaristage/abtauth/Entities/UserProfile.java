@@ -1,6 +1,7 @@
 package com.attijaristage.abtauth.Entities;
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -10,7 +11,7 @@ public class UserProfile {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long idUserprofile;
     private String keycloakId;
-    private Date dateOfBirth;
+    private LocalDate dateOfBirth;
     private String matricule;
     private String address;
     private String phoneNumber;
@@ -19,7 +20,7 @@ public class UserProfile {
     }
 
 
-    public UserProfile(Long id, String idKeycloak, Date dateOfBirth, String matricule, String address, String phoneNumber) {
+    public UserProfile(Long id, String idKeycloak, LocalDate dateOfBirth, String matricule, String address, String phoneNumber) {
         this.idUserprofile = id;
         this.keycloakId = idKeycloak;
         this.dateOfBirth = dateOfBirth;
@@ -48,6 +49,7 @@ public class UserProfile {
         return address;
     }
 
+
     public void setAddress(String address) {
         this.address = address;
     }
@@ -67,11 +69,11 @@ public class UserProfile {
     public void setIdUserProfile(Long id) {
         this.idUserprofile = id;
     }
-    public Date getDateOfBirth() {
+    public LocalDate getDateOfBirth() {
         return dateOfBirth;
     }
 
-    public void setDateOfBirth(Date dateOfBirth) {
+    public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
     }
 

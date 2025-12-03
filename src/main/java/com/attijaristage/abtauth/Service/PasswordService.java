@@ -11,22 +11,25 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class PasswordService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final KeycloakUserService keycloakUserService;
 
-    public void changePassword(String token, String realm, ChangePasswordRequest request) {
-        String url = "http://localhost:8080/realms/" + realm + "/account/credentials/password";
+    public PasswordService(KeycloakUserService keycloakUserService) {
+        this.keycloakUserService = keycloakUserService;
+    }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(token); // Authorization: Bearer token
-
-        HttpEntity<ChangePasswordRequest> entity = new HttpEntity<>(request, headers);
-
-        try {
-            restTemplate.exchange(url, HttpMethod.PUT, entity, Void.class);
-        } catch (Exception e) {
-            throw new RuntimeException("Erreur changement mot de passe: " + e.getMessage(), e);
+    public void changePassword(String username, ChangePasswordRequest request) {
+        // Vérification que le nouveau mot de passe correspond à la confirmation
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("Le nouveau mot de passe et sa confirmation ne correspondent pas !");
         }
+
+        // Vérification de l'ancien mot de passe
+        try {
+            keycloakUserService.login(username, request.getCurrentPassword());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("error "+e.getMessage());
+        }
+
+        keycloakUserService.changeUserPassword(request.getKeycloakId(), request.getNewPassword());
     }
 }
-
